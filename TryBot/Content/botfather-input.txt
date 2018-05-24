@@ -1,0 +1,2 @@
+help - Shows available commands
+note - Adds context about a person in google spreadsheet
