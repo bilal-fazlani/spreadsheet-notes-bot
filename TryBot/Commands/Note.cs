@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Args;
+using Telegram.Bot.Types.Enums;
 
 namespace TryBot.Commands
 {
@@ -57,8 +58,9 @@ namespace TryBot.Commands
         private async Task ProvideHelpAsync(MessageEventArgs messageEventArgs)
         {
             await BotClient.SendTextMessageAsync(messageEventArgs.Message.Chat.Id, @"Try specifying more parameters.
-Syntax: /note <Name> <Context>
-For example: /note john wants to work on big data");
+
+Syntax: `/note <Name> <Context>`
+For example: `/note john wants to work on big data`", ParseMode.Markdown);
         }
     }
 }
