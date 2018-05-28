@@ -14,8 +14,8 @@ namespace TryBot.Commands
 Shows available commands
 
 */note*
-Syntax: `/note <Name> <Context>`
-Adds context about a person in [google spreadsheet](https://docs.google.com/spreadsheets/d/{Config.SpreadSheetId})
+Syntax: `/note <content with optional #hastags>`
+Adds text in [google spreadsheet](https://docs.google.com/spreadsheets/d/{Config.SpreadSheetId})
 ";
         
         public async Task ProcessMessage(MessageEventArgs messageEventArgs)

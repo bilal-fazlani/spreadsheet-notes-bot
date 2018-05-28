@@ -47,8 +47,8 @@ namespace TryBot.Commands
         {
             await BotClient.SendTextMessageAsync(messageEventArgs.Message.Chat.Id, @"Try specifying more parameters.
 
-Syntax: `/note <Name> <Context>`
-For example: `/note john wants to work on big data`", ParseMode.Markdown);
+Syntax: `/note <content with optional #hastags>`
+For example: `/note #john wants to work on big data`", ParseMode.Markdown);
         }
     }
 }
