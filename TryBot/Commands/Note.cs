@@ -31,21 +31,9 @@ namespace TryBot.Commands
                     await ProvideHelpAsync(messageEventArgs);
                 }
                 else
-                {
-                    string[] split = text.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-
-                    if (split.Length != 2)
-                    {
-                        await ProvideHelpAsync(messageEventArgs);
-                    }
-                    else
-                    {
-                        string name = split[0];
-                        string context = split[1];
-                        
-                        await _sheet.Note(new Message(name, context, messageEventArgs.Message.Date.ToString("dd-MMM-yyyy"), messageEventArgs.Message.From.FirstName));
-                        await BotClient.SendTextMessageAsync(messageEventArgs.Message.Chat.Id, "Noted");
-                    }
+                {                    
+                    await _sheet.Note(new Message(text, messageEventArgs.Message.Date.ToString("dd-MMM-yyyy"), messageEventArgs.Message.From.FirstName));
+                    await BotClient.SendTextMessageAsync(messageEventArgs.Message.Chat.Id, "Noted");
                 }
             }
             catch (Exception ex)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Apis.Auth.OAuth2;
@@ -93,13 +94,12 @@ namespace TryBot
                 {
                     Values = new List<IList<object>>()
                     {
-                        new List<object>()
+                        new List<object>
                         {
-                            message.Name,
-                            message.Comments,
-                            message.Sender,
-                            message.DateTime
-                        }
+                            message.AddedBy,
+                            message.DateTime,
+                            message.Comment
+                        }.Union(message.Tags).ToList()
                     }
                 } , Config.SpreadSheetId, newRange);
             

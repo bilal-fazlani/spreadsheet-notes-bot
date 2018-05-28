@@ -1,23 +1,54 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace TryBot
 {
     public class Message
     {
-        public Message(string name, string comments, string dateTime, string sender)
+        public Message(string comment, string dateTime, string addedBy)
         {
-            Name = name;
-            Comments = comments;
+            Comment = comment;
             DateTime = dateTime;
-            Sender = sender;
+            AddedBy = addedBy;
+            CreateTags();
         }
-
-        public string Name { get; set; }
         
-        public string Comments { get; set; }
+        public string Comment { get; }
 
-        public string DateTime { get; set; }
+        public string DateTime { get; }
 
-        public string  Sender { get; set; }
+        public string  AddedBy { get; }       
+        
+        public List<string> Tags { get; private set; }
+
+        private void CreateTags()
+        {
+            List<string> tags = Enumerable.Range(0, 30).Select(x => "").ToList();
+            
+            int tagCount = 0;
+            bool readingTag = false;
+            
+            for (int i = 0; i < Comment.Length; i++)
+            {                
+                if (Comment[i] == '#')
+                {
+                    tagCount++;
+                    readingTag = true;
+                    continue;
+                }
+
+                if (readingTag)
+                {
+                    tags[tagCount - 1] += Comment[i];
+                }
+                
+                if (Comment[i] == ' ')
+                {
+                    readingTag = false;
+                }
+            }
+
+            Tags = tags.Take(tagCount).ToList();
+        }
     }
 }
