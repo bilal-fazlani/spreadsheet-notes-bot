@@ -1,8 +1,8 @@
 .idea
 bin
 obj
-TryBot/telegram_api_key.txt
-*.json
+appsettings.*.json
+launchsettings*
 *.user
 personal
 publish
