@@ -7,12 +7,13 @@ using Serilog;
 
 namespace SpreadsheetTextCapture
 {
-    public class AuthDataStore : IDataStore
+    public class AccessTokenStore : IDataStore
     {
         private readonly ILogger _logger;
         private readonly IMongoDatabase _database;
+        private const string COLLECTION_NAME = "auth";
         
-        public AuthDataStore(IOptions<BotConfig> options, ILogger logger)
+        public AccessTokenStore(IOptions<BotConfig> options, ILogger logger)
         {
             _logger = logger;
             BotConfig botConfig = options.Value;
@@ -22,12 +23,12 @@ namespace SpreadsheetTextCapture
         
         public async Task StoreAsync<T>(string key, T value)
         {
-            var collection = _database.GetCollection<AuthRecord<T>>("auth");
+            var collection = _database.GetCollection<AuthRecord<T>>(COLLECTION_NAME);
             
             AuthRecord<T> authRecord = new AuthRecord<T>(value, key);
 
             var replaceOneResult = await collection.ReplaceOneAsync(
-                doc => doc.Id == key, 
+                doc => doc.Id == key,
                 authRecord, 
                 new UpdateOptions {IsUpsert = true});
                 
@@ -36,20 +37,20 @@ namespace SpreadsheetTextCapture
 
         public async Task DeleteAsync<T>(string key)
         {
-            var collection = _database.GetCollection<AuthRecord<T>>("auth");
+            var collection = _database.GetCollection<AuthRecord<T>>(COLLECTION_NAME);
             await collection.DeleteOneAsync(x => x.Id == key);
         }
 
         public async Task<T> GetAsync<T>(string key)
         {
-            var collection = _database.GetCollection<AuthRecord<T>>("auth");
+            var collection = _database.GetCollection<AuthRecord<T>>(COLLECTION_NAME);
             var record = await collection.Find(x => x.Id == key).SingleOrDefaultAsync();
             return record != null ? record.Value : default;
         }
 
         public async Task ClearAsync()
         {
-            await _database.DropCollectionAsync("auth");
+            await _database.DropCollectionAsync(COLLECTION_NAME);
         }
     }
 

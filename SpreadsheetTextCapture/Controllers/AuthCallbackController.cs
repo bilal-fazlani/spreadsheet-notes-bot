@@ -12,14 +12,16 @@ namespace SpreadsheetTextCapture.Controllers
         private readonly TextParser _textParser;
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly ILogger _logger;
+        private readonly GoogleAuthentication _googleAuthentication;
 
         public AuthCallbackController(AccessCodeStore accessCodeStore, TextParser textParser, 
-            ITelegramBotClient telegramBotClient, ILogger logger)
+            ITelegramBotClient telegramBotClient, ILogger logger, GoogleAuthentication googleAuthentication)
         {
             _accessCodeStore = accessCodeStore;
             _textParser = textParser;
             _telegramBotClient = telegramBotClient;
             _logger = logger;
+            _googleAuthentication = googleAuthentication;
         }
         
         [HttpGet]
@@ -33,6 +35,8 @@ namespace SpreadsheetTextCapture.Controllers
             await _accessCodeStore.SetAccessCodeAsync(chatId, accessCode);
             
             _logger.Debug("Access code for chat id - {chatId} saved");
+
+            await _googleAuthentication.GetAccessTokenAsync(chatId);
             
             //todo:test spreadsheet accesss
             

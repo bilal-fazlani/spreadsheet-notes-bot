@@ -38,7 +38,7 @@ namespace SpreadsheetTextCapture
             services.AddSingleton<Start>();
             services.AddSingleton<Authorize>();
             services.AddSingleton<SpreadsheetIdStore>();
-            services.AddSingleton<AuthDataStore>();
+            services.AddSingleton<AccessTokenStore>();
             services.AddSingleton<NoteTaker>();
             services.AddSingleton<SheetsServiceFactory>();
             services.AddSingleton<GoogleAuthentication>();

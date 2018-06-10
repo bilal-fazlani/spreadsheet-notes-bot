@@ -15,18 +15,18 @@ namespace SpreadsheetTextCapture.MessageProcessors
         private readonly TextParser _textParser;
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly Authorize _authorize;
-        private readonly AuthDataStore _authDataStore;
+        private readonly AccessTokenStore _accessTokenStore;
         private readonly AccessCodeStore _accessCodeStore;
         private readonly ILogger _logger;
 
         public Note(NoteTaker noteTaker, TextParser textParser, ITelegramBotClient telegramBotClient, 
-            Authorize authorize, AuthDataStore authDataStore, AccessCodeStore accessCodeStore, ILogger logger)
+            Authorize authorize, AccessTokenStore accessTokenStore, AccessCodeStore accessCodeStore, ILogger logger)
         {
             _noteTaker = noteTaker;
             _textParser = textParser;
             _telegramBotClient = telegramBotClient;
             _authorize = authorize;
-            _authDataStore = authDataStore;
+            _accessTokenStore = accessTokenStore;
             _accessCodeStore = accessCodeStore;
             _logger = logger;
         }
@@ -70,7 +70,7 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 
                 //permissions may have been revoked, clear access codes and access tokens
                 await _accessCodeStore.DeleteCodeAsync(chatId);
-                await _authDataStore.DeleteAsync<TokenResponse>(chatId);
+                await _accessTokenStore.DeleteAsync<TokenResponse>(chatId);
                 //cleaned codes
                 
                 await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, "I am having difficulties accessing the spreadsheet. Try authorizing again and make sure you have permissions to make changes to the spreadsheet");
@@ -82,7 +82,7 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 
                 //permissions may have been revoked, clear access codes and access tokens
                 await _accessCodeStore.DeleteCodeAsync(chatId);
-                await _authDataStore.DeleteAsync<TokenResponse>(chatId);
+                await _accessTokenStore.DeleteAsync<TokenResponse>(chatId);
                 //cleaned codes
                 
                 await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, "I am having difficulties accessing the spreadsheet. Try authorizing again and make sure you have permissions to make changes to the spreadsheet");
