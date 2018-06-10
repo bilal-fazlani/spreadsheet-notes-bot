@@ -3,7 +3,7 @@
 rm -rf ../publish
 dotnet build -c release
 dotnet publish -o ../publish -c release
-rm ../publish/client_*
+rm -rf ../publish/personal
 docker build --no-cache -t opsbot .
 heroku container:push -v web --app=ops-assistant-test
 heroku container:release web --app=ops-assistant-test
