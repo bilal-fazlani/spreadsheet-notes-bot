@@ -58,6 +58,10 @@ namespace SpreadsheetTextCapture.MessageProcessors
 Google spreadsheet is now set to {args}");
                 }
             }
+            catch (UnauthorizedChatException)
+            {
+                await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, "First, you need to /authorize me");
+            }
             catch (Exception e)
             {
                 _logger.Error(e, "Error");

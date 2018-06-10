@@ -33,6 +33,12 @@ namespace SpreadsheetTextCapture.MessageProcessors
 
         public async Task<IMessageProcessor> GetMessageProcessorAsync(Update update)
         {
+            if (update.Type != UpdateType.Message)
+            {
+                _logger.Information("unsupported update type. will be ignored {@update}", update);
+                return null;
+            }
+            
             if (update.Message.Type == MessageType.Text)
             {
                 string message = update.Message.Text.Trim();
@@ -44,6 +50,8 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 if (match.Success)
                 {
                     string commandName = match.Groups[1].Value;
+                    
+                    _logger.Debug("command name is: {command}", commandName);
                 
                     switch (commandName.ToLower())
                     {
@@ -70,10 +78,12 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 User self = await _self.GetInfoAsync();
                 if (update.Message.NewChatMembers.Any(member => member.Id == self.Id))
                 {
+                    _logger.Debug("joined in group");
                     return _joined;
                 }
             }
 
+            _logger.Information("could not determine a message processor. this message will be ignored {@update}", update);
             return null;
         }
     }

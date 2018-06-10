@@ -21,7 +21,8 @@ namespace SpreadsheetTextCapture.Controllers
         [Route("/update")]
         public async Task<IActionResult> Post([FromBody]Update update)
         {
-            _logger.Debug("update received for chat {chatId}", update?.Message?.Chat?.Id);
+            _logger.Debug("update received for chat {chatId}", 
+                update?.Message?.Chat?.Id ?? update?.EditedMessage?.Chat?.Id ?? update?.CallbackQuery?.Message?.Chat?.Id);
             
             IMessageProcessor messageProcessor = await _messageProcessorFactory.GetMessageProcessorAsync(update);
             if(messageProcessor != null) 
