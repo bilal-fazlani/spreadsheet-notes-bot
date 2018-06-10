@@ -34,8 +34,11 @@ Syntax: `/note <content with optional #hastags>`
 Adds a note in google spreadsheet
 
 */spreadsheet*
-Syntax: `/spreadsheet <google spreadsheet url>`
+Syntax 1: `/spreadsheet <google spreadsheet url>`
 Starts using given spreadsheet to store data
+
+Syntax 2:  `/spreadsheet new`
+Creates a new google spreadsheet and starts using it store data
 
 */authorize*
 Syntax: `/authorize`
