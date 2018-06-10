@@ -5,6 +5,7 @@ using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Sheets.v4;
 using Microsoft.Extensions.Options;
+using Serilog;
 
 namespace SpreadsheetTextCapture
 {
@@ -12,12 +13,15 @@ namespace SpreadsheetTextCapture
     {
         private readonly AuthDataStore _authDataStore;
         private readonly AccessCodeStore _accessCodeStore;
+        private readonly ILogger _logger;
         private readonly BotConfig _botConfig;
         
-        public GoogleAuthentication(IOptions<BotConfig> options, AuthDataStore authDataStore, AccessCodeStore accessCodeStore)
+        public GoogleAuthentication(IOptions<BotConfig> options, AuthDataStore authDataStore, 
+            AccessCodeStore accessCodeStore, ILogger logger)
         {
             _authDataStore = authDataStore;
             _accessCodeStore = accessCodeStore;
+            _logger = logger;
             _botConfig = options.Value;
             
             ClientSecrets clientSecrets = new ClientSecrets
@@ -58,11 +62,16 @@ namespace SpreadsheetTextCapture
                     var codeFlow = AuthorizationCodeFlow;
 
                     //generate access token for the first time
+                    
+                    _logger.Debug("generating access token for chat id - {chatId}", chatId);
+                    
                     tokenResponse = await codeFlow.ExchangeCodeForTokenAsync(
                         chatId,
                         accessCode, 
                         _botConfig.AuthCallbackUrl,
                         CancellationToken.None);
+                    
+                    _logger.Information("access token generated successfully for chat id - {chatId}", chatId);
                 }
             }
 

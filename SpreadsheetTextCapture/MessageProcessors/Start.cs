@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -9,11 +10,13 @@ namespace SpreadsheetTextCapture.MessageProcessors
     {
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly Self _self;
+        private readonly ILogger _logger;
 
-        public Start(ITelegramBotClient telegramBotClient, Self self)
+        public Start(ITelegramBotClient telegramBotClient, Self self, ILogger logger)
         {
             _telegramBotClient = telegramBotClient;
             _self = self;
+            _logger = logger;
         }
         
         public async Task ProcessMessageAsync(Update update)
@@ -29,7 +32,7 @@ I am your assistant. My name is {firstName}. To know about available commands, t
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
+                _logger.Error(ex, "Error");
                 await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, "Something went wrong");
             }
         }

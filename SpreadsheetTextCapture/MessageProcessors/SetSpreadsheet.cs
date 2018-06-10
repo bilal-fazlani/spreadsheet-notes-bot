@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -12,12 +13,15 @@ namespace SpreadsheetTextCapture.MessageProcessors
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly SpreadsheetIdStore _spreadsheetIdStore;
         private readonly TextParser _textParser;
+        private readonly ILogger _logger;
 
-        public SetSpreadsheet(ITelegramBotClient telegramBotClient, SpreadsheetIdStore spreadsheetIdStore, TextParser textParser)
+        public SetSpreadsheet(ITelegramBotClient telegramBotClient, SpreadsheetIdStore spreadsheetIdStore, 
+            TextParser textParser, ILogger logger)
         {
             _telegramBotClient = telegramBotClient;
             _spreadsheetIdStore = spreadsheetIdStore;
             _textParser = textParser;
+            _logger = logger;
         }
         
         public async Task ProcessMessageAsync(Update update)
@@ -42,7 +46,7 @@ Google spreadsheet is now set to {args}");
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                _logger.Error(e, "Error");
                 await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, "Something went wrong");
             }   
         }

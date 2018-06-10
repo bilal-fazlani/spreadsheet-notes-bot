@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -9,10 +10,12 @@ namespace SpreadsheetTextCapture.MessageProcessors
     public class Help : IMessageProcessor
     {
         private readonly ITelegramBotClient _telegramBotClient;
+        private readonly ILogger _logger;
 
-        public Help(ITelegramBotClient telegramBotClient, SpreadsheetIdStore spreadsheetIdStore)
+        public Help(ITelegramBotClient telegramBotClient, ILogger logger)
         {
             _telegramBotClient = telegramBotClient;
+            _logger = logger;
         }
 
         public async Task ProcessMessageAsync(Update update)
@@ -44,7 +47,7 @@ Authorize the bot to access google spreadsheet
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
+                _logger.Error(ex, "Error");
                 await _telegramBotClient.SendTextMessageAsync(chatId, "Something went wrong");
             }
         }

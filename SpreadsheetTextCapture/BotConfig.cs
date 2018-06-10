@@ -4,6 +4,7 @@
     {
         public string TelegramApiKey { get; set; }
         public string TelegramWebhookUrl { get; set; }
+        public string TelegramSinkChatId { get; set; }
         public string MongoConnectionString { get; set; }
         public string MongoDatabaseName { get; set; }
         public string GoogleClientId { get; set; }

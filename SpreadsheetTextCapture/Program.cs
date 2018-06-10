@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.Telegram;
 
 namespace SpreadsheetTextCapture
 {
@@ -20,10 +21,14 @@ namespace SpreadsheetTextCapture
         
         public static int Main(string[] args)
         {
+            string telegramApiKey = Configuration.GetSection("BotConfig")["TelegramApiKey"];
+            string telegramSinkChatId = Configuration.GetSection("BotConfig")["TelegramSinkChatId"];
+            
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(Configuration)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
+                .WriteTo.Telegram(telegramApiKey, telegramSinkChatId, restrictedToMinimumLevel:LogEventLevel.Error)
                 .CreateLogger();
             try
             {

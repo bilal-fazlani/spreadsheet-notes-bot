@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Serilog;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -15,9 +16,10 @@ namespace SpreadsheetTextCapture.MessageProcessors
         private readonly Help _help;
         private readonly Joined _joined;
         private readonly Self _self;
+        private readonly ILogger _logger;
 
         public MessageProcessorFactory(Note note, SetSpreadsheet setSpreadsheet, Authorize authorize,
-            Start start, Help help, Joined joined, Self self)
+            Start start, Help help, Joined joined, Self self, ILogger logger)
         {
             _note = note;
             _setSpreadsheet = setSpreadsheet;
@@ -26,6 +28,7 @@ namespace SpreadsheetTextCapture.MessageProcessors
             _help = help;
             _joined = joined;
             _self = self;
+            _logger = logger;
         }
 
         public async Task<IMessageProcessor> GetMessageProcessorAsync(Update update)
@@ -55,10 +58,10 @@ namespace SpreadsheetTextCapture.MessageProcessors
                         case "help":
                             return _help;
                         default:
+                            _logger.Error("Could not find a message processor for update. {@update}", update);
                             return null;
                     }
                 }
-
                 return _help;
             }
 

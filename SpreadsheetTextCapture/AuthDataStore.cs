@@ -3,15 +3,18 @@ using System.Threading.Tasks;
 using Google.Apis.Util.Store;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using Serilog;
 
 namespace SpreadsheetTextCapture
 {
     public class AuthDataStore : IDataStore
     {
+        private readonly ILogger _logger;
         private readonly IMongoDatabase _database;
         
-        public AuthDataStore(IOptions<BotConfig> options)
+        public AuthDataStore(IOptions<BotConfig> options, ILogger logger)
         {
+            _logger = logger;
             BotConfig botConfig = options.Value;
             var client = new MongoClient(botConfig.MongoConnectionString);
             _database = client.GetDatabase(botConfig.MongoDatabaseName);
@@ -28,7 +31,7 @@ namespace SpreadsheetTextCapture
                 authRecord, 
                 new UpdateOptions {IsUpsert = true});
                 
-            Console.WriteLine($"mongo upsert match count: {replaceOneResult.MatchedCount}");
+            _logger.Debug("mongo upsert match count: {matchCount}", replaceOneResult.MatchedCount);
         }
 
         public async Task DeleteAsync<T>(string key)

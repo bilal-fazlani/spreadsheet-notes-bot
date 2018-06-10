@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using Telegram.Bot;
 
 namespace SpreadsheetTextCapture.Controllers
@@ -10,52 +11,35 @@ namespace SpreadsheetTextCapture.Controllers
         private readonly AccessCodeStore _accessCodeStore;
         private readonly TextParser _textParser;
         private readonly ITelegramBotClient _telegramBotClient;
+        private readonly ILogger _logger;
 
-        public AuthCallbackController(AccessCodeStore accessCodeStore, TextParser textParser, ITelegramBotClient telegramBotClient)
+        public AuthCallbackController(AccessCodeStore accessCodeStore, TextParser textParser, 
+            ITelegramBotClient telegramBotClient, ILogger logger)
         {
             _accessCodeStore = accessCodeStore;
             _textParser = textParser;
             _telegramBotClient = telegramBotClient;
+            _logger = logger;
         }
         
         [HttpGet]
         [Route("/callback")]
         public async Task<IActionResult> GoogleCallbackForCode([FromQuery(Name = "code")]string accessCode, string state)
         {            
-//            Console.WriteLine($"code: {code}, state: {state}");
-
-//            var codeFlow = _cred.AuthorizationCodeFlow;
-//
-//            TokenResponse accessToken = await codeFlow.ExchangeCodeForTokenAsync("bilalmf@thoughtworks.com", accessCode, _botConfig.AuthCallbackUrl,
-//                CancellationToken.None);
-
             string chatId = _textParser.ParseCallbackState(state)["chatId"];
             
+            _logger.Debug("Received auth callback for chatId - {chatId}", chatId);
+            
             await _accessCodeStore.SetAccessCodeAsync(chatId, accessCode);
+            
+            _logger.Debug("Access code for chat id - {chatId} saved");
             
             //todo:test spreadsheet accesss
             
             await _telegramBotClient.SendTextMessageAsync(chatId, @"Successfully authenticated with google.
 
 To revoke permissions, visit https://myaccount.google.com/permissions");
-            
-            //todo: use serilog
-            
-//            string token = JsonConvert.SerializeObject(accessToken);
-//            
-//            Console.WriteLine($"tokenResponse : {token}");
-//            
-//            SheetsService service = new SheetsService(new BaseClientService.Initializer
-//            {
-//                HttpClientInitializer = new UserCredential(codeFlow, "bilalmf@thoughtworks.com", accessToken)
-//            });
-            
-//            SpreadsheetsResource.GetRequest request = new SpreadsheetsResource.GetRequest(service, "1aEzYnsxGiJtPiJK2loKteRtT5XvrqkPaE16oNiHbMuw");
-                                                                          //
-                                                                          //            var spreadsheet = await request.ExecuteAsync();
-                                                                          //            
-                                                                          //            Console.WriteLine(JsonConvert.SerializeObject(spreadsheet));
-
+  
             return Redirect("/success");
         }
         
