@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Google.Apis.Util.Store;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using Serilog;
 
@@ -69,6 +71,7 @@ namespace SpreadsheetTextCapture.DataStores
         }
         
         public string Id { get; set; }
+        [BsonRepresentation(BsonType.String)]
         public DateTimeOffset LastModified { get; set; }
         public T Value { get; set; }
     }

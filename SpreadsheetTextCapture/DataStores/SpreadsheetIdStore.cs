@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using SpreadsheetTextCapture.Exceptions;
 
@@ -58,6 +60,7 @@ namespace SpreadsheetTextCapture.DataStores
         /// </summary>
         public string Id { get; set; }
         public string SpreadsheetId { get; set; }
+        [BsonRepresentation(BsonType.String)]
         public DateTimeOffset LastModified { get; set; }
     }
 }
