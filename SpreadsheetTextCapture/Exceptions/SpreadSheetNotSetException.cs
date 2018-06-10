@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SpreadsheetTextCapture
+namespace SpreadsheetTextCapture.Exceptions
 {
     public class SpreadSheetNotSetException : Exception
     {

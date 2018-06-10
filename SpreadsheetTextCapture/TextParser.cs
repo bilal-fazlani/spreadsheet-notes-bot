@@ -22,7 +22,7 @@ namespace SpreadsheetTextCapture
             if (match.Success)
             {
                 string text = match.Groups[2].Value;
-                return text;
+                return text.Trim();
             }
 
             return message;

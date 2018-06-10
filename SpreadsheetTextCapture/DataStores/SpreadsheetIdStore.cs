@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using SpreadsheetTextCapture.Exceptions;
 
-namespace SpreadsheetTextCapture
+namespace SpreadsheetTextCapture.DataStores
 {
     public class SpreadsheetIdStore
     {

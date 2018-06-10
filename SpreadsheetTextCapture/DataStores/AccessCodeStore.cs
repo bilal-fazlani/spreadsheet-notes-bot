@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace SpreadsheetTextCapture
+namespace SpreadsheetTextCapture.DataStores
 {
     public class AccessCodeStore
     {

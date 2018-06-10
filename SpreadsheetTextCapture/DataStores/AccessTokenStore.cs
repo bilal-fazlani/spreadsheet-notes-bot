@@ -1,11 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Google.Apis.Util.Store;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Serilog;
 
-namespace SpreadsheetTextCapture
+namespace SpreadsheetTextCapture.DataStores
 {
     public class AccessTokenStore : IDataStore
     {

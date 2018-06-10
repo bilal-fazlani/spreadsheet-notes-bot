@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Serilog;
+using SpreadsheetTextCapture.DataStores;
 using SpreadsheetTextCapture.MessageProcessors;
 using Telegram.Bot;
 
@@ -39,7 +40,7 @@ namespace SpreadsheetTextCapture
             services.AddSingleton<Authorize>();
             services.AddSingleton<SpreadsheetIdStore>();
             services.AddSingleton<AccessTokenStore>();
-            services.AddSingleton<NoteTaker>();
+            services.AddSingleton<SpreadsheetDriver>();
             services.AddSingleton<SheetsServiceFactory>();
             services.AddSingleton<GoogleAuthentication>();
             services.AddSingleton<AccessCodeStore>();

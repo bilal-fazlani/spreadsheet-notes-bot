@@ -2,6 +2,8 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Serilog;
+using SpreadsheetTextCapture.DataStores;
+using SpreadsheetTextCapture.Exceptions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -14,14 +16,19 @@ namespace SpreadsheetTextCapture.MessageProcessors
         private readonly SpreadsheetIdStore _spreadsheetIdStore;
         private readonly TextParser _textParser;
         private readonly ILogger _logger;
+        private readonly SpreadsheetDriver _spreadsheetDriver;
 
-        public SetSpreadsheet(ITelegramBotClient telegramBotClient, SpreadsheetIdStore spreadsheetIdStore, 
-            TextParser textParser, ILogger logger)
+        public SetSpreadsheet(ITelegramBotClient telegramBotClient, 
+            SpreadsheetIdStore spreadsheetIdStore, 
+            TextParser textParser, 
+            ILogger logger,
+            SpreadsheetDriver spreadsheetDriver)
         {
             _telegramBotClient = telegramBotClient;
             _spreadsheetIdStore = spreadsheetIdStore;
             _textParser = textParser;
             _logger = logger;
+            _spreadsheetDriver = spreadsheetDriver;
         }
         
         public async Task ProcessMessageAsync(Update update)
@@ -32,6 +39,13 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 if (string.IsNullOrWhiteSpace(args))
                 {
                     await ProvideHelpAsync(update);
+                }
+                else if (args.ToLower() == "new")
+                {
+                    string url = await _spreadsheetDriver.CreateNewSpreadsheet(update.Message.Chat.Id);
+                    await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id,
+                        $@"New spreadsheet has been created here - 
+{url}");
                 }
                 else
                 {
@@ -69,17 +83,23 @@ Google spreadsheet is now set to {args}");
             {
                 string spreadSheetId = await _spreadsheetIdStore.GetSpreadSheetIdAsync(update.Message.Chat.Id.ToString());
 
-                await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id,
-                    $@"Current spreadsheet url: {_spreadsheetIdStore.ConvertSpreadSheetIdToUrl(spreadSheetId)}
+                string response = $@"Current spreadsheet url: `{_spreadsheetIdStore.ConvertSpreadSheetIdToUrl(spreadSheetId)}`
 
-To change it, use `/spreadsheet <new url>`", ParseMode.Markdown);
+To change it, use `/spreadsheet <spreadsheet url>`
+
+To create a new spreadsheet, use `/spreadsheet new`";
+                await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id,
+                    response, ParseMode.Markdown);
             }
             catch (SpreadSheetNotSetException)
             {
-                await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id,
-                    $@"There is no spreadsheet set yet.
+                var response = @"There is no spreadsheet set yet.
 
-To set it, use `/spreadsheet <new url>`", ParseMode.Markdown);
+To set it, use `/spreadsheet <spreadsheet url>`
+
+To create a new spreadsheet, use `/spreadsheet new`";
+                await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id,
+                    response, ParseMode.Markdown);
             }
         }
     }

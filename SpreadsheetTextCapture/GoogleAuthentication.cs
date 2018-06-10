@@ -7,6 +7,8 @@ using Google.Apis.Sheets.v4;
 using Google.Apis.Util;
 using Microsoft.Extensions.Options;
 using Serilog;
+using SpreadsheetTextCapture.DataStores;
+using SpreadsheetTextCapture.Exceptions;
 
 namespace SpreadsheetTextCapture
 {

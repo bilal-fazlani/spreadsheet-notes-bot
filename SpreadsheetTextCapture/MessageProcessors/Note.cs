@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Google;
 using Google.Apis.Auth.OAuth2.Responses;
 using Serilog;
+using SpreadsheetTextCapture.DataStores;
+using SpreadsheetTextCapture.Exceptions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -11,7 +13,7 @@ namespace SpreadsheetTextCapture.MessageProcessors
 {
     public class Note : IMessageProcessor
     {
-        private readonly NoteTaker _noteTaker;
+        private readonly SpreadsheetDriver _spreadsheetDriver;
         private readonly TextParser _textParser;
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly Authorize _authorize;
@@ -19,10 +21,10 @@ namespace SpreadsheetTextCapture.MessageProcessors
         private readonly AccessCodeStore _accessCodeStore;
         private readonly ILogger _logger;
 
-        public Note(NoteTaker noteTaker, TextParser textParser, ITelegramBotClient telegramBotClient, 
+        public Note(SpreadsheetDriver spreadsheetDriver, TextParser textParser, ITelegramBotClient telegramBotClient, 
             Authorize authorize, AccessTokenStore accessTokenStore, AccessCodeStore accessCodeStore, ILogger logger)
         {
-            _noteTaker = noteTaker;
+            _spreadsheetDriver = spreadsheetDriver;
             _textParser = textParser;
             _telegramBotClient = telegramBotClient;
             _authorize = authorize;
@@ -51,7 +53,7 @@ namespace SpreadsheetTextCapture.MessageProcessors
 
                     _logger.Debug("making note in spreadshet for chatId {chatId}", chatId);
                     
-                    await _noteTaker.Note(chatId,
+                    await _spreadsheetDriver.Note(chatId,
                         new Message(text, update.Message.Date.ToString("dd-MMM-yyyy"), fromName));
                     
                     _logger.Debug("sucessfully saved note in spreadsheet for chatId {chatId}", chatId);
