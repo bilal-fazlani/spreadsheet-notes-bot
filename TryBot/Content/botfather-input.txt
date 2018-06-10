@@ -1,7 +1,0 @@
-help - Shows available commands
-note - Adds context about a person in google spreadsheet
-
-
-
-description: It can record and maintain context about people in organisation. At present, it records all data in a google spreadsheet.
-
