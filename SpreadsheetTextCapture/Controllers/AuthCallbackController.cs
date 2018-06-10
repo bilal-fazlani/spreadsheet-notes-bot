@@ -35,7 +35,7 @@ namespace SpreadsheetTextCapture.Controllers
             
             await _accessCodeStore.SetAccessCodeAsync(chatId, accessCode);
             
-            _logger.Debug("Access code for chat id - {chatId} saved");
+            _logger.Debug("Access code for chat id - {chatId} saved", chatId);
 
             await _googleAuthentication.GetAccessTokenAsync(chatId);
             
