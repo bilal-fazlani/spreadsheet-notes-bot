@@ -4,3 +4,6 @@ obj
 TryBot/telegram_api_key.txt
 *.json
 *.user
+personal
+publish
+
