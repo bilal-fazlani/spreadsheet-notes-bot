@@ -33,8 +33,9 @@ namespace SpreadsheetTextCapture.MessageProcessors
                                  $"&redirect_uri={_botConfig.AuthCallbackUrl}" +
                                  $"&scope={SheetsService.Scope.Spreadsheets}" +
                                  "&response_type=code" +
-                                 $"&state=chatId={chatId}" +
-                                 "&access_type=offline";
+                                 "&access_type=offline" +
+                                 "&prompt=consent" +
+                                 $"&state=chatId={chatId}";
 
                 await _telegramBotClient.SendTextMessageAsync(chatId,
                     $"[Click here]({authUrl}) to authorize me", ParseMode.Markdown);
