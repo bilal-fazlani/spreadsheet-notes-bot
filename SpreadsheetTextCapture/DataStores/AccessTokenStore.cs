@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Google.Apis.Util.Store;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -64,9 +65,11 @@ namespace SpreadsheetTextCapture.DataStores
         {
             Value = value;
             Id = key;
+            LastModified = DateTimeOffset.Now;
         }
         
         public string Id { get; set; }
+        public DateTimeOffset LastModified { get; set; }
         public T Value { get; set; }
     }
 }

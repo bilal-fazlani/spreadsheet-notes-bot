@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -31,7 +32,8 @@ namespace SpreadsheetTextCapture.DataStores
             await _collection.ReplaceOneAsync(filter, new ChatAccessCode
             {
                 AccessCode = accessCode,
-                Id = chatId
+                Id = chatId,
+                LastModified = DateTimeOffset.Now
             }, new UpdateOptions
             {
                 IsUpsert = true
@@ -52,5 +54,6 @@ namespace SpreadsheetTextCapture.DataStores
         /// </summary>
         public string Id { get; set; }
         public string AccessCode { get; set; }
+        public DateTimeOffset LastModified { get; set; }
     }
 }
