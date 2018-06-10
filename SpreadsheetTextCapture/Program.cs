@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
@@ -9,16 +11,23 @@ namespace SpreadsheetTextCapture
 {
     public class Program
     {
+        public static IConfiguration Configuration { get; } = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"}.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+        
         public static int Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .ReadFrom.Configuration(Configuration)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .CreateLogger();
             try
             {
+                Log.Information("Getting the motors running...");
                 CreateWebHostBuilder(args).Build().Run();
                 return 0;
             }
@@ -38,6 +47,7 @@ namespace SpreadsheetTextCapture
             string port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
             
             return WebHost.CreateDefaultBuilder(args)
+                .UseConfiguration(Configuration)
                 .UseUrls($"http://*:{port}")
                 .UseSerilog()
                 .ConfigureServices(sc => { sc.AddSingleton<ILogger>(Log.Logger); })

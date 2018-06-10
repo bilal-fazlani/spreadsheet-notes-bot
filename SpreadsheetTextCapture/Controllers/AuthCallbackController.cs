@@ -61,7 +61,7 @@ To revoke permissions, visit https://myaccount.google.com/permissions");
         
         [HttpGet]
         [Route("/success")]
-        public async Task<IActionResult> Redirect()
+        public IActionResult Redirect()
         {
             return Ok("Authorisation success. You may close this browser window/tab");
         }
