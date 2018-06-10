@@ -50,13 +50,18 @@ namespace SpreadsheetTextCapture
 
         public async Task<TokenResponse> GetAccessTokenAsync(string chatId)
         {
+            _logger.Debug("fetching access token from database for chat {chatId} ...", chatId);
             TokenResponse tokenResponse = await _accessTokenStore.GetAsync<TokenResponse>(chatId);         
             
             if (tokenResponse == null) // its the first time spreadsheet access for this chat id
             {
+                _logger.Debug("access token is not present in databse for chat {chatId}", chatId);
+                
                 string accessCode = await _accessCodeStore.GetCodeAsync(chatId);
+                
                 if (accessCode == null) //user never authorized
                 {
+                    _logger.Debug("access code is also not preset for chatId {chatId}. This user is not authorized", chatId);
                     throw new UnauthorizedChatException(chatId);
                 } 
                 else //user authenticatedd but access token was never generated
@@ -80,7 +85,15 @@ namespace SpreadsheetTextCapture
             }
             else if (tokenResponse.IsExpired(AuthorizationCodeFlow.Clock))
             {
-                _logger.Debug("token was expired... refreshing it...");
+                if (string.IsNullOrEmpty(tokenResponse.RefreshToken))
+                {
+                    _logger.Warning("the access token fetched from database does not have a refresh token. " +
+                                    "it will not be able to refresh");
+                }
+                else
+                {
+                    _logger.Debug("access token fetched from databse is expired... refreshing it...");
+                }
                 
                 tokenResponse = await AuthorizationCodeFlow.RefreshTokenAsync(chatId, tokenResponse.RefreshToken,
                     CancellationToken.None);

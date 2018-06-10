@@ -59,13 +59,21 @@ namespace SpreadsheetTextCapture
         {
             SheetsService sheetsService = await _sheetsServiceFactory.GetSheetsServiceAsync(chatId);
 
+            _logger.Debug("getting spreadsheetId for chat {chatId}", chatId);
+            
             string spreadSheetId = await _spreadsheetIdStore.GetSpreadSheetIdAsync(chatId);
+            
+            _logger.Debug("fetched spreadSheetId for chat {chatId}", chatId);
 
+            _logger.Debug("making note in spreadshet for chatId {chatId}", chatId);
+            
             await AppendMessageAsync(sheetsService, spreadSheetId, message);
+            
+            _logger.Debug("sucessfully saved note in spreadsheet for chatId {chatId}", chatId);
         }
         
         private async Task AppendMessageAsync(SheetsService service, string spreadsheetId, Message message)
-        {
+        {            
             string range = await GetRange(service, spreadsheetId);
             
             SpreadsheetsResource.ValuesResource.AppendRequest request =

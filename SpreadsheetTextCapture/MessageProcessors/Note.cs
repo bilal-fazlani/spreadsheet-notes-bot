@@ -50,13 +50,10 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 else
                 {
                     string fromName = $"{update.Message.From.FirstName} {update.Message.From.LastName}".Trim();
-
-                    _logger.Debug("making note in spreadshet for chatId {chatId}", chatId);
                     
                     await _spreadsheetDriver.Note(chatId,
                         new Message(text, update.Message.Date.ToString("dd-MMM-yyyy"), fromName));
                     
-                    _logger.Debug("sucessfully saved note in spreadsheet for chatId {chatId}", chatId);
                     
                     _logger.Debug("sending success message back to chat {chatId}", chatId);
                     
