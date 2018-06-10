@@ -7,7 +7,7 @@ namespace SpreadsheetTextCapture.Controllers
     public class HealthController : ControllerBase
     {        
         [Route("/health")]
-        public async Task<IActionResult> Health()
+        public IActionResult Health()
         {
             return Ok("OK");
         }
