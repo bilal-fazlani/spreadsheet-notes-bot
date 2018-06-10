@@ -1,14 +1,36 @@
 ﻿using System;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Events;
 
 namespace SpreadsheetTextCapture
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
+            try
+            {
+                CreateWebHostBuilder(args).Build().Run();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Host terminated unexpectedly");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args)
@@ -17,6 +39,8 @@ namespace SpreadsheetTextCapture
             
             return WebHost.CreateDefaultBuilder(args)
                 .UseUrls($"http://*:{port}")
+                .UseSerilog()
+                .ConfigureServices(sc => { sc.AddSingleton<ILogger>(Log.Logger); })
                 .UseStartup<Startup>();   
         }
     }
