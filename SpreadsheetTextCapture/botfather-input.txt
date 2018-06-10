@@ -1,0 +1,8 @@
+help - Shows available commands
+note - Adds context about a person in google spreadsheet
+spreadsheet - Starts using given spreadsheet to store data
+authorize - Authorize the bot to access google spreadsheet
+
+
+description: It can record text notes in a google spreadsheet
+
