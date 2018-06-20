@@ -47,6 +47,9 @@
     <PackageReference Include="Serilog.Sinks.TelegramClient">
       <Version>2.0.1</Version>
     </PackageReference>
+    <PackageReference Include="Stateless">
+      <Version>4.2.1</Version>
+    </PackageReference>
     <PackageReference Include="Telegram.Bot">
       <Version>14.5.0</Version>
     </PackageReference>

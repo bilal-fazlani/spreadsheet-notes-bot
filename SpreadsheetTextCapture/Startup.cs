@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using SpreadsheetTextCapture.DataStores;
 using SpreadsheetTextCapture.MessageProcessors;
+using SpreadsheetTextCapture.StateManagement;
 using Telegram.Bot;
 
 namespace SpreadsheetTextCapture
@@ -45,6 +46,7 @@ namespace SpreadsheetTextCapture
             services.AddSingleton<GoogleAuthentication>();
             services.AddSingleton<AccessCodeStore>();
             services.AddSingleton<TextParser>();
+            services.AddSingleton<KeyboardManager>();
             services.AddScoped<ErrorReportingAttribute>();
         }
 
