@@ -19,7 +19,7 @@ namespace SpreadsheetTextCapture
             .AddEnvironmentVariables()
             .Build();
         
-        public static int Main(string[] args)
+        public static int Main0(string[] args)
         {
             string telegramApiKey = Configuration.GetSection("BotConfig")["TelegramApiKey"];
             string telegramSinkChatId = Configuration.GetSection("BotConfig")["TelegramSinkChatId"];

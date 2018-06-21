@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using System;
+using Serilog;
 using Stateless;
 using Telegram.Bot;
 
@@ -8,125 +9,149 @@ namespace SpreadsheetTextCapture.StateManagement
     {
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly ILogger _logger;
-        private readonly StateMachine<KeyboardState, KeyboardTriggers> _keyboard = new StateMachine<KeyboardState, KeyboardTriggers>(KeyboardState.Clear);
-        private readonly StateMachine<KeyboardState, KeyboardTriggers>.TriggerWithParameters<string> _setUrlTrigger;
+        private readonly StateMachine<KeyboardState, string> _keyboard = new StateMachine<KeyboardState, string>(KeyboardState.Clear);
+        private readonly StateMachine<KeyboardState, string>.TriggerWithParameters<string> _setUrlTrigger;
         
-        public KeyboardManager(ITelegramBotClient telegramBotClient, ILogger logger)
+        public KeyboardManager(ILogger logger)
         {
-            _telegramBotClient = telegramBotClient;
+            //_telegramBotClient = telegramBotClient;
             _logger = logger;
 
             //////////////////////////////////////////////////////////////////////////////////
 
-            _keyboard.SetTriggerParameters<string>(KeyboardTriggers.UserEnterUrl);
+            _setUrlTrigger = _keyboard.SetTriggerParameters<string>(KeyboardTriggers.ENTER_URL);
             
             _keyboard.Configure(KeyboardState.Clear)
-                .Permit(KeyboardTriggers.UserOpenSettings, KeyboardState.SettingsOpen);
+                .OnEntry(OnClear)
+                .OnEntryFrom(_setUrlTrigger, OnSetSpreadsheetUrl)
+                .OnEntryFrom(KeyboardTriggers.CREATE_NEW, OnCreateNewSpreadsheet)
+                .OnEntryFrom(KeyboardTriggers.REVOKE_PERMISSIONS, OnRevokePermissions)
+                .OnEntryFrom(KeyboardTriggers.AUTHORIZE, OnAuthorize)
+                .OnEntryFrom(KeyboardTriggers.OPEN, OnOpen)
+                .Permit(KeyboardTriggers.SETTINGS, KeyboardState.SettingsOpen);
 
             _keyboard.Configure(KeyboardState.SettingsOpen)
                 .OnEntry(OnOpenSettings)
-                .Permit(KeyboardTriggers.UserClickBack, KeyboardState.Clear)
-                .Permit(KeyboardTriggers.UserClickSpreadsheet, KeyboardState.SpreadsheetSettingsOpen)
-                .Permit(KeyboardTriggers.UserClickAuthorization, KeyboardState.AuthMenuOpen);
+                .Permit(KeyboardTriggers.BACK, KeyboardState.Clear)
+                .Permit(KeyboardTriggers.SPREADSHEET, KeyboardState.SpreadsheetSettingsOpen)
+                .Permit(KeyboardTriggers.AUTHORIZATION, KeyboardState.AuthMenuOpen);
 
             _keyboard.Configure(KeyboardState.SpreadsheetSettingsOpen)
                 .OnEntry(OnSpreadsheetSettingsOpen)
-                .Permit(KeyboardTriggers.UserClickBack, KeyboardState.SettingsOpen)
-                .Permit(KeyboardTriggers.UserClickSetUrl, KeyboardState.AwaitingSpreadsheetUrl)
-                .Permit(KeyboardTriggers.UserClickCreateNew, KeyboardState.Clear)
-                .Permit(KeyboardTriggers.UserClickOpen, KeyboardState.Clear);
+                .Permit(KeyboardTriggers.BACK, KeyboardState.SettingsOpen)
+                .Permit(KeyboardTriggers.SET_SPREADSHEET, KeyboardState.AwaitingSpreadsheetUrl)
+                .Permit(KeyboardTriggers.CHANGE_SPREADSHEET, KeyboardState.AwaitingSpreadsheetUrl)
+                .Permit(KeyboardTriggers.CREATE_NEW, KeyboardState.Clear)
+                .Permit(KeyboardTriggers.OPEN, KeyboardState.Clear);
 
             _keyboard.Configure(KeyboardState.AwaitingSpreadsheetUrl)
                 .OnEntry(OnAwaitingSpreadsheetUrl)
-                .Permit(KeyboardTriggers.UserClickBack, KeyboardState.SettingsOpen)
-//                .PermitDynamic(_setUrlTrigger, _ => KeyboardState.SpreadsheetSettingsOpen);
-//                .Permit(KeyboardTriggers.UserEnterUrl, KeyboardState.SpreadsheetSettingsOpen);
-                .InternalTransition(_setUrlTrigger, (url, transition) => OnSetSpreadsheetUrl(url));
-
-
+                .Permit(KeyboardTriggers.BACK, KeyboardState.SettingsOpen)
+                .Permit(KeyboardTriggers.ENTER_URL, KeyboardState.Clear);
+                
             _keyboard.Configure(KeyboardState.AuthMenuOpen)
                 .OnEntry(OnAuthMenuOpen)
-                .Permit(KeyboardTriggers.UserClickBack, KeyboardState.SettingsOpen)
-                .Permit(KeyboardTriggers.UserClickRevokePermissions, KeyboardState.AuthMenuOpen)
-                .Permit(KeyboardTriggers.UserClickAuthorize, KeyboardState.AuthMenuOpen);
+                .Permit(KeyboardTriggers.BACK, KeyboardState.SettingsOpen)
+                .Permit(KeyboardTriggers.REVOKE_PERMISSIONS, KeyboardState.Clear)
+                .Permit(KeyboardTriggers.AUTHORIZE, KeyboardState.Clear);
             
             ////////////////////////////////////////////////////////////////////////////////////
         }
 
-        public void OpenSettings()
+        #region status_check
+
+        public bool IsClear()
         {
-            _keyboard.Fire(KeyboardTriggers.UserOpenSettings);
+            return _keyboard.State == KeyboardState.Clear;
+        }
+        
+        public bool IsAwaitingUrl()
+        {
+            return _keyboard.State == KeyboardState.AwaitingSpreadsheetUrl;
         }
 
+        #endregion
+
+        #region control
+
+        public void Fire(string trigger)
+        {
+            if(_keyboard.CanFire(trigger))
+                _keyboard.Fire(trigger);
+        }
+        
+        public void SetSpreadsheetUrl(string url)
+        {
+            if(_keyboard.CanFire(KeyboardTriggers.ENTER_URL))
+                _keyboard.Fire(_setUrlTrigger, url);
+        }
+
+        #endregion        
+        
+        #region events
+        private void OnClear()
+        {
+            _logger.Information("All clear !");
+        }
+
+        private void OnCreateNewSpreadsheet()
+        {
+            _logger.Information("A new spreadsheet has been created");
+        }
+        
         private void OnOpenSettings()
         {
-            _logger.Information("I am now in open settings state");
-        }
-
-        public void GoBack()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickBack);
-        }
-
-        public void OpenAuthorizationSettings()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickAuthorization);
+            _logger.Information("Settings are now open");
         }
 
         private void OnAuthMenuOpen()
         {
-            _logger.Information("Auth menu is now open");
-        }
-
-        public void OpenSpreadsheetSettings()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickSpreadsheet);
+            _logger.Information("Auth settings are now open");
         }
 
         private void OnSpreadsheetSettingsOpen()
         {
-            _logger.Information("spreadsheet settings are now open");
-        }
-
-        public void CreateNewSpreadsheet()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickCreateNew);
-        }
-
-        public void PromptForNewSpreadsheetUrl()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickSetUrl);
+            _logger.Information("Spreadsheet settings are now open");
         }
 
         private void OnAwaitingSpreadsheetUrl()
         {
-            _logger.Information("I am now awaiting a new url");
-        }
-
-        public void OpenSpreadsheetUrl()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickOpen);
-        }
-
-        public void OpenRevokePermissionsUrl()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickRevokePermissions);
-        }
-
-        public void OpenGoogleAuthorizationUrl()
-        {
-            _keyboard.Fire(KeyboardTriggers.UserClickAuthorize);
-        }
-
-        public void SetSpreadsheetUrl(string url)
-        {
-            _logger.Information($"Spreadsheet url has been set to {url}");
-            _keyboard.Fire(KeyboardTriggers.UserEnterUrl);
+            _logger.Information("I am now awaiting a new spreadsheet url");
         }
 
         private void OnSetSpreadsheetUrl(string url)
         {
-            _logger.Information($"spreadsheet url  is now set to {url}");
+            _logger.Information($"Spreadsheet url  is now set to {url}");
         }
+        
+        private void OnRevokePermissions()
+        {
+            _logger.Information($"Permission revoke url has been sent to user");
+        }
+        
+        private void OnAuthorize()
+        {
+            _logger.Information("Authorization URL has been sent to user");
+        }
+        
+        private void OnOpen()
+        {
+            _logger.Information("Spreadsheet url has been sent to user");
+        }
+        
+        #endregion
+
+        #region temp
+
+        public void PrintAvailableCommands()
+        {
+            Console.WriteLine("Available commands: ");
+            foreach (var keyboardPermittedTrigger in _keyboard.PermittedTriggers)
+            {
+                Console.WriteLine(keyboardPermittedTrigger);
+            }
+        }
+
+        #endregion
     }
 }
