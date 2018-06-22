@@ -21,7 +21,7 @@ namespace SpreadsheetTextCapture
         {
             if (_user == null)
             {
-                _logger.Debug("fetching infor about self...");
+                _logger.Debug("fetching information about self...");
                 _user = await _telegramBotClient.GetMeAsync();
                 _logger.Information("fetched info about self");
             }

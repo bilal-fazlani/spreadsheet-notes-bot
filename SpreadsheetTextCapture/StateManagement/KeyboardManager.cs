@@ -23,12 +23,12 @@ namespace SpreadsheetTextCapture.StateManagement
             _setUrlTrigger = _keyboard.SetTriggerParameters<string>(KeyboardTriggers.ENTER_URL);
             
             _keyboard.Configure(KeyboardState.Clear)
-                .OnEntry(OnClear)
                 .OnEntryFrom(_setUrlTrigger, OnSetSpreadsheetUrl)
                 .OnEntryFrom(KeyboardTriggers.CREATE_NEW, OnCreateNewSpreadsheet)
                 .OnEntryFrom(KeyboardTriggers.REVOKE_PERMISSIONS, OnRevokePermissions)
                 .OnEntryFrom(KeyboardTriggers.AUTHORIZE, OnAuthorize)
                 .OnEntryFrom(KeyboardTriggers.OPEN, OnOpen)
+                .OnEntry(OnClear)
                 .Permit(KeyboardTriggers.SETTINGS, KeyboardState.SettingsOpen);
 
             _keyboard.Configure(KeyboardState.SettingsOpen)
