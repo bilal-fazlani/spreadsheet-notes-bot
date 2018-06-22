@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Serilog;
+using SpreadsheetTextCapture.DataStores;
 using Stateless;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -15,13 +14,18 @@ namespace SpreadsheetTextCapture.StateManagement
         const string HARDCODED_CHAT_ID = "552481329"; 
         
         private readonly ITelegramBotClient _telegramBotClient;
+        private readonly AccessCodeStore _accessCodeStore;
+        private readonly SpreadsheetIdStore _spreadsheetIdStore;
         private readonly ILogger _logger;
         private StateMachine<KeyboardState, string> _keyboard;
         private StateMachine<KeyboardState, string>.TriggerWithParameters<string> _setUrlTrigger;
         
-        public KeyboardManager(ILogger logger, ITelegramBotClient telegramBotClient)
+        public KeyboardManager(ILogger logger, ITelegramBotClient telegramBotClient, 
+            AccessCodeStore accessCodeStore, SpreadsheetIdStore spreadsheetIdStore)
         {
             _telegramBotClient = telegramBotClient;
+            _accessCodeStore = accessCodeStore;
+            _spreadsheetIdStore = spreadsheetIdStore;
             _logger = logger;
 
             //////////////////////////////////////////////////////////////////////////////////
@@ -149,10 +153,14 @@ namespace SpreadsheetTextCapture.StateManagement
         private async Task OnAuthMenuOpen()
         {
             _logger.Debug("Open Auth settings initialed");
+
+            bool authorized = await _accessCodeStore.GetCodeAsync(HARDCODED_CHAT_ID) != null; 
             
-            //todo: fix this based on current state of authorisation
             await SendKeyboard(
-                new[] {KeyboardTriggers.REVOKE_PERMISSIONS, KeyboardTriggers.AUTHORIZE},
+                new[]
+                {
+                    authorized ? KeyboardTriggers.REVOKE_PERMISSIONS : KeyboardTriggers.AUTHORIZE
+                },
                 new[] {KeyboardTriggers.BACK});
             
             _logger.Debug("Auth settings are now open");
@@ -162,10 +170,15 @@ namespace SpreadsheetTextCapture.StateManagement
         {
             _logger.Debug("Open Spreadsheet settings initialed");
 
-            //todo: fix this based on current state of spreadsheet
+            bool spreadSheetSet = await _spreadsheetIdStore.GetSpreadSheetIdAsync(HARDCODED_CHAT_ID) != null;
+            
             await SendKeyboard(
-                new [] {KeyboardTriggers.CHANGE_SPREADSHEET, KeyboardTriggers.SET_SPREADSHEET}, 
-                new [] {KeyboardTriggers.CREATE_NEW, KeyboardTriggers.BACK});
+                new []
+                {
+                    (spreadSheetSet ? KeyboardTriggers.CHANGE_SPREADSHEET : KeyboardTriggers.SET_SPREADSHEET),
+                    KeyboardTriggers.CREATE_NEW
+                }, 
+                new [] {KeyboardTriggers.BACK});
             
             _logger.Debug("Spreadsheet settings are now open");
         }
@@ -203,7 +216,8 @@ namespace SpreadsheetTextCapture.StateManagement
         private async Task SendKeyboard(params string[][] buttonRows)
         {
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup(buttonRows.Select(r => r.Select(t=>new KeyboardButton(t))));
-            await _telegramBotClient.SendTextMessageAsync(HARDCODED_CHAT_ID, "Select an option", replyMarkup: replyKeyboardMarkup);
+            await _telegramBotClient.SendTextMessageAsync(HARDCODED_CHAT_ID, "Select an option or " +
+                                                                             "send /cancel to cancel current operation", replyMarkup: replyKeyboardMarkup);
         }
         
         private async Task ClearKeyboard(string message)
