@@ -1,7 +1,7 @@
 ﻿namespace SpreadsheetTextCapture.StateManagement
 {
     public static class KeyboardTriggers
-    {
+    {      
         public const string SETTINGS = "/settings";
         public const string ENTER_URL = "ENTER_URL";
         

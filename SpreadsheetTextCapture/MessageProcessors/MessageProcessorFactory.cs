@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Serilog;
+using SpreadsheetTextCapture.StateManagement;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -15,11 +16,14 @@ namespace SpreadsheetTextCapture.MessageProcessors
         private readonly Start _start;
         private readonly Help _help;
         private readonly Joined _joined;
+        private readonly Keyboard _keyboard;
+        private readonly KeyboardManager _keyboardManager;
         private readonly Self _self;
         private readonly ILogger _logger;
 
         public MessageProcessorFactory(Note note, SetSpreadsheet setSpreadsheet, Authorize authorize,
-            Start start, Help help, Joined joined, Self self, ILogger logger)
+            Start start, Help help, Joined joined, Keyboard keyboard, KeyboardManager keyboardManager,
+            Self self, ILogger logger)
         {
             _note = note;
             _setSpreadsheet = setSpreadsheet;
@@ -27,12 +31,14 @@ namespace SpreadsheetTextCapture.MessageProcessors
             _start = start;
             _help = help;
             _joined = joined;
+            _keyboard = keyboard;
+            _keyboardManager = keyboardManager;
             _self = self;
             _logger = logger;
         }
 
         public async Task<IMessageProcessor> GetMessageProcessorAsync(Update update)
-        {
+        {            
             if (update.Type != UpdateType.Message)
             {
                 _logger.Information("unsupported update type. will be ignored {@update}", update);
@@ -42,8 +48,21 @@ namespace SpreadsheetTextCapture.MessageProcessors
             if (update.Message.Type == MessageType.Text)
             {
                 string message = update.Message.Text.Trim();
+                
+                if (!_keyboardManager.IsClear() && !_keyboardManager.IsAwaitingUrl())
+                {
+                    if (_keyboardManager.CanFire(message))
+                    {
+                        _logger.Debug("keyboard state is not clear, choosing keyboard message processor");
+                        return _keyboard;   
+                    }
+                    else
+                    {
+                        _logger.Debug("can't fire this command: {command} at this time", message);
+                    }
+                }
             
-                Regex regex = new Regex(@"\/(note|help|start|authorize|spreadsheet)(.*)", RegexOptions.IgnoreCase);
+                Regex regex = new Regex(@"\/(note|help|start|authorize|spreadsheet|settings|cancel)(.*)", RegexOptions.IgnoreCase);
 
                 Match match = regex.Match(message);
 
@@ -55,6 +74,9 @@ namespace SpreadsheetTextCapture.MessageProcessors
                 
                     switch (commandName.ToLower())
                     {
+                        case "cancel":
+                        case "settings":
+                            return _keyboard;
                         case "note":
                             return _note;
                         case "spreadsheet":

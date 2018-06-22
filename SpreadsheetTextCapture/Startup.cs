@@ -47,6 +47,7 @@ namespace SpreadsheetTextCapture
             services.AddSingleton<AccessCodeStore>();
             services.AddSingleton<TextParser>();
             services.AddSingleton<KeyboardManager>();
+            services.AddSingleton<Keyboard>();
             services.AddScoped<ErrorReportingAttribute>();
         }
 
