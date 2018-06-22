@@ -16,5 +16,6 @@
         public const string CHANGE_SPREADSHEET = "Change spreadsheet";
         public const string CREATE_NEW = "Create new";
         public const string OPEN = "Open";
+        public const string CANCEL = "/cancel";
     }
 }

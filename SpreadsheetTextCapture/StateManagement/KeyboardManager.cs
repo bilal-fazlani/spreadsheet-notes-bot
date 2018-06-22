@@ -1,6 +1,7 @@
 ﻿using System;
 using Serilog;
 using Stateless;
+using Stateless.Graph;
 using Telegram.Bot;
 
 namespace SpreadsheetTextCapture.StateManagement
@@ -38,6 +39,7 @@ namespace SpreadsheetTextCapture.StateManagement
 
             _keyboard.Configure(KeyboardState.SpreadsheetSettingsOpen)
                 .OnEntry(OnSpreadsheetSettingsOpen)
+                .OnEntryFrom(KeyboardTriggers.CANCEL, OnCancel)
                 .Permit(KeyboardTriggers.BACK, KeyboardState.SettingsOpen)
                 .Permit(KeyboardTriggers.SET_SPREADSHEET, KeyboardState.AwaitingSpreadsheetUrl)
                 .Permit(KeyboardTriggers.CHANGE_SPREADSHEET, KeyboardState.AwaitingSpreadsheetUrl)
@@ -46,7 +48,7 @@ namespace SpreadsheetTextCapture.StateManagement
 
             _keyboard.Configure(KeyboardState.AwaitingSpreadsheetUrl)
                 .OnEntry(OnAwaitingSpreadsheetUrl)
-                .Permit(KeyboardTriggers.BACK, KeyboardState.SettingsOpen)
+                .Permit(KeyboardTriggers.CANCEL, KeyboardState.SpreadsheetSettingsOpen)
                 .Permit(KeyboardTriggers.ENTER_URL, KeyboardState.Clear);
                 
             _keyboard.Configure(KeyboardState.AuthMenuOpen)
@@ -64,7 +66,7 @@ namespace SpreadsheetTextCapture.StateManagement
         {
             return _keyboard.State == KeyboardState.Clear;
         }
-        
+
         public bool IsAwaitingUrl()
         {
             return _keyboard.State == KeyboardState.AwaitingSpreadsheetUrl;
@@ -79,16 +81,20 @@ namespace SpreadsheetTextCapture.StateManagement
             if(_keyboard.CanFire(trigger))
                 _keyboard.Fire(trigger);
         }
-        
-        public void SetSpreadsheetUrl(string url)
+
+        public void SetSpreadsheetUrl(string urlInput)
         {
+            if(urlInput == KeyboardTriggers.CANCEL)
+                Fire(urlInput);
+            
             if(_keyboard.CanFire(KeyboardTriggers.ENTER_URL))
-                _keyboard.Fire(_setUrlTrigger, url);
+                _keyboard.Fire(_setUrlTrigger, urlInput);
         }
 
-        #endregion        
-        
+        #endregion
+
         #region events
+
         private void OnClear()
         {
             _logger.Information("All clear !");
@@ -98,7 +104,7 @@ namespace SpreadsheetTextCapture.StateManagement
         {
             _logger.Information("A new spreadsheet has been created");
         }
-        
+
         private void OnOpenSettings()
         {
             _logger.Information("Settings are now open");
@@ -123,12 +129,17 @@ namespace SpreadsheetTextCapture.StateManagement
         {
             _logger.Information($"Spreadsheet url  is now set to {url}");
         }
-        
+
+        private void OnCancel()
+        {
+            _logger.Information("Cancelled spreadsheet url change");
+        }
+
         private void OnRevokePermissions()
         {
             _logger.Information($"Permission revoke url has been sent to user");
         }
-        
+
         private void OnAuthorize()
         {
             _logger.Information("Authorization URL has been sent to user");
@@ -142,7 +153,7 @@ namespace SpreadsheetTextCapture.StateManagement
         #endregion
 
         #region temp
-
+        
         public void PrintAvailableCommands()
         {
             Console.WriteLine("Available commands: ");
