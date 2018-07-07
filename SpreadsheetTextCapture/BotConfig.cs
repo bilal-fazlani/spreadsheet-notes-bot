@@ -9,7 +9,6 @@
         public string MongoDatabaseName { get; set; }
         public string GoogleClientId { get; set; }
         public string GoogleClientSecret { get; set; }
-        public string AuthCallbackUrl { get; set; }
-        
+        public string AuthCallbackUrl { get; set; }        
     }
 }

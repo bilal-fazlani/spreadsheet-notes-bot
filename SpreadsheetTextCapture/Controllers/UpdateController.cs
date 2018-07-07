@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using SpreadsheetTextCapture.MessageProcessors;
@@ -21,8 +22,10 @@ namespace SpreadsheetTextCapture.Controllers
         [Route("/update")]
         public async Task<IActionResult> Post([FromBody]Update update)
         {
+            Console.WriteLine("-----------------------------------------------------------");
             _logger.Debug("update received for chat {chatId}", 
                 update?.Message?.Chat?.Id ?? update?.EditedMessage?.Chat?.Id ?? update?.CallbackQuery?.Message?.Chat?.Id);
+            Console.WriteLine("-----------------------------------------------------------");
             
             IMessageProcessor messageProcessor = await _messageProcessorFactory.GetMessageProcessorAsync(update);
             if(messageProcessor != null) 

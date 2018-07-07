@@ -10,6 +10,7 @@
         public const string AUTHORIZATION = "Authorization";
         
         public const string REVOKE_PERMISSIONS = "Revoke permissions";
+        public const string AUTHORIZE_AGAIN = "Authorize again";
         public const string AUTHORIZE = "Authorize";
         
         public const string SET_SPREADSHEET = "Set new spreadsheet";

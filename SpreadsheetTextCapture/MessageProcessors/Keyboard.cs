@@ -17,7 +17,7 @@ namespace SpreadsheetTextCapture.MessageProcessors
         {
             if (update.Message?.Text.ToLower() == "/cancel")
             {
-                await _keyboardManager.ClearKeyboardAsync();
+                await _keyboardManager.OnClear();
             }
             
             if (_keyboardManager.IsAwaitingUrl())

@@ -49,17 +49,9 @@ namespace SpreadsheetTextCapture.MessageProcessors
             {
                 string message = update.Message.Text.Trim();
                 
-                if (!_keyboardManager.IsClear() && !_keyboardManager.IsAwaitingUrl())
+                if (!_keyboardManager.IsClear())
                 {
-                    if (_keyboardManager.CanFire(message))
-                    {
-                        _logger.Debug("keyboard state is not clear, choosing keyboard message processor");
-                        return _keyboard;   
-                    }
-                    else
-                    {
-                        _logger.Debug("can't fire this command: {command} at this time", message);
-                    }
+                    return _keyboard;
                 }
             
                 Regex regex = new Regex(@"\/(note|help|start|authorize|spreadsheet|settings|cancel)(.*)", RegexOptions.IgnoreCase);

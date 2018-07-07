@@ -1,9 +1,14 @@
 ﻿using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Google.Apis.Sheets.v4;
+using Microsoft.Extensions.Options;
 using Serilog;
 using SpreadsheetTextCapture.DataStores;
+using SpreadsheetTextCapture.Exceptions;
 using Stateless;
 using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace SpreadsheetTextCapture.StateManagement
@@ -11,22 +16,27 @@ namespace SpreadsheetTextCapture.StateManagement
     public class KeyboardManager
     {
         //todo: remove this hardcoding
-        const string HARDCODED_CHAT_ID = "552481329"; 
-        
+        const string HARDCODED_CHAT_ID = "552481329";
+
+        private readonly BotConfig _botConfig;
         private readonly ITelegramBotClient _telegramBotClient;
         private readonly AccessCodeStore _accessCodeStore;
         private readonly SpreadsheetIdStore _spreadsheetIdStore;
+        private readonly SpreadsheetDriver _spreadsheetDriver;
         private readonly ILogger _logger;
         private StateMachine<KeyboardState, string> _keyboard;
         private StateMachine<KeyboardState, string>.TriggerWithParameters<string> _setUrlTrigger;
         
         public KeyboardManager(ILogger logger, ITelegramBotClient telegramBotClient, 
-            AccessCodeStore accessCodeStore, SpreadsheetIdStore spreadsheetIdStore)
+            AccessCodeStore accessCodeStore, SpreadsheetIdStore spreadsheetIdStore,
+            IOptions<BotConfig> options, SpreadsheetDriver spreadsheetDriver)
         {
             _telegramBotClient = telegramBotClient;
             _accessCodeStore = accessCodeStore;
             _spreadsheetIdStore = spreadsheetIdStore;
+            _spreadsheetDriver = spreadsheetDriver;
             _logger = logger;
+            _botConfig = options.Value;
 
             //////////////////////////////////////////////////////////////////////////////////
 
@@ -38,15 +48,17 @@ namespace SpreadsheetTextCapture.StateManagement
         private (StateMachine<KeyboardState, string>, StateMachine<KeyboardState, string>.TriggerWithParameters<string>) CreateKeyboard()
         {
             StateMachine<KeyboardState, string> keyboard = new StateMachine<KeyboardState, string>(KeyboardState.Clear);
+            
             var setUrlTrigger = keyboard.SetTriggerParameters<string>(KeyboardTriggers.ENTER_URL);
 
             keyboard.Configure(KeyboardState.Clear)
-                .OnEntryFrom(setUrlTrigger, OnSetSpreadsheetUrl)
-                .OnEntryFrom(KeyboardTriggers.CREATE_NEW, OnCreateNewSpreadsheet)
-                .OnEntryFrom(KeyboardTriggers.REVOKE_PERMISSIONS, OnRevokePermissions)
-                .OnEntryFrom(KeyboardTriggers.AUTHORIZE, OnAuthorize)
-                .OnEntryFrom(KeyboardTriggers.OPEN, OnOpen)
-                .OnEntryAsync(OnClear)
+                .OnEntryFromAsync(setUrlTrigger, OnSetSpreadsheetUrl)
+                .OnEntryFromAsync(KeyboardTriggers.CREATE_NEW, OnCreateNewSpreadsheet)
+                .OnEntryFromAsync(KeyboardTriggers.REVOKE_PERMISSIONS, OnRevokePermissions)
+                .OnEntryFromAsync(KeyboardTriggers.AUTHORIZE, OnAuthorize)
+                .OnEntryFromAsync(KeyboardTriggers.AUTHORIZE_AGAIN, OnAuthorize)
+                .OnEntryFromAsync(KeyboardTriggers.OPEN, OnOpen)
+                .OnEntryFromAsync(KeyboardTriggers.BACK, OnClear)
                 .Permit(KeyboardTriggers.SETTINGS, KeyboardState.SettingsOpen);
 
             keyboard.Configure(KeyboardState.SettingsOpen)
@@ -75,6 +87,7 @@ namespace SpreadsheetTextCapture.StateManagement
                 .Permit(KeyboardTriggers.BACK, KeyboardState.SettingsOpen)
                 .Permit(KeyboardTriggers.CANCEL, KeyboardState.Clear)
                 .Permit(KeyboardTriggers.REVOKE_PERMISSIONS, KeyboardState.Clear)
+                .Permit(KeyboardTriggers.AUTHORIZE_AGAIN, KeyboardState.Clear)
                 .Permit(KeyboardTriggers.AUTHORIZE, KeyboardState.Clear);
 
             return (keyboard, setUrlTrigger);
@@ -110,13 +123,13 @@ namespace SpreadsheetTextCapture.StateManagement
         public async Task SetSpreadsheetUrl(string urlInput)
         {
             if(urlInput == KeyboardTriggers.CANCEL)
-                await FireAsync(urlInput);
+                await FireAsync(KeyboardTriggers.CANCEL);
             
             if(_keyboard.CanFire(KeyboardTriggers.ENTER_URL))
                 await _keyboard.FireAsync(_setUrlTrigger, urlInput);
         }
         
-        public async Task ClearKeyboardAsync()
+        public async Task OnClear()
         {
             _logger.Debug("resetting state");
             (_keyboard, _setUrlTrigger) = CreateKeyboard();
@@ -129,21 +142,17 @@ namespace SpreadsheetTextCapture.StateManagement
 
         #region events
 
-        private async Task OnClear()
+        private async Task OnCreateNewSpreadsheet()
         {
-            _logger.Debug("Keybaord clear initiated");
-            await ClearKeyboard(":)");
-            _logger.Debug("Keybaord cleared");
-        }
-
-        private void OnCreateNewSpreadsheet()
-        {
-            _logger.Information("A new spreadsheet has been created");
+            //todo: exception handling
+            string url = await _spreadsheetDriver.CreateNewSpreadsheet(HARDCODED_CHAT_ID);
+            await ClearKeyboard($@"New spreadsheet has been created here - 
+{url}");
         }
 
         private async Task OnOpenSettings()
         {
-            _logger.Debug("Open settigs initiated");
+            _logger.Debug("Open settings initiated");
             await SendKeyboard(
                 new[] {KeyboardTriggers.SPREADSHEET, KeyboardTriggers.AUTHORIZATION},
                 new[] {KeyboardTriggers.BACK});
@@ -154,13 +163,10 @@ namespace SpreadsheetTextCapture.StateManagement
         {
             _logger.Debug("Open Auth settings initialed");
 
-            bool authorized = await _accessCodeStore.GetCodeAsync(HARDCODED_CHAT_ID) != null; 
-            
+            bool authorized = await _accessCodeStore.GetCodeAsync(HARDCODED_CHAT_ID) != null;
+
             await SendKeyboard(
-                new[]
-                {
-                    authorized ? KeyboardTriggers.REVOKE_PERMISSIONS : KeyboardTriggers.AUTHORIZE
-                },
+                authorized ? new[] { KeyboardTriggers.REVOKE_PERMISSIONS, KeyboardTriggers.AUTHORIZE_AGAIN } : new[] { KeyboardTriggers.AUTHORIZE },
                 new[] {KeyboardTriggers.BACK});
             
             _logger.Debug("Auth settings are now open");
@@ -178,7 +184,8 @@ namespace SpreadsheetTextCapture.StateManagement
                     (spreadSheetSet ? KeyboardTriggers.CHANGE_SPREADSHEET : KeyboardTriggers.SET_SPREADSHEET),
                     KeyboardTriggers.CREATE_NEW
                 }, 
-                new [] {KeyboardTriggers.BACK});
+                spreadSheetSet ? new [] {KeyboardTriggers.OPEN, KeyboardTriggers.BACK} : new [] {KeyboardTriggers.BACK}
+                );
             
             _logger.Debug("Spreadsheet settings are now open");
         }
@@ -191,27 +198,57 @@ namespace SpreadsheetTextCapture.StateManagement
             _logger.Debug("I am now awaiting a new spreadsheet url");
         }
 
-        private void OnSetSpreadsheetUrl(string url)
+        private async Task OnSetSpreadsheetUrl(string url)
         {
-            _logger.Information($"Spreadsheet url  is now set to {url}");
+            (string spreadsheetId, _) = ExtractSpreadSheetId(url);
+
+            await _spreadsheetIdStore.SetSpreadSheetIdAsync(HARDCODED_CHAT_ID, spreadsheetId);
+            await ClearKeyboard($@"Done
+
+Google spreadsheet is now set to {url}");
         }
 
-        private void OnRevokePermissions()
+        private async Task OnRevokePermissions()
         {
-            _logger.Information("Permission revoke url has been sent to user");
+            await ClearKeyboard("To revoke permissions, visit https://myaccount.google.com/permissions");
         }
 
-        private void OnAuthorize()
+        private async Task OnAuthorize()
         {
-            _logger.Information("Authorization URL has been sent to user");
+            string authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
+                             $"client_id={_botConfig.GoogleClientId}" +
+                             $"&redirect_uri={_botConfig.AuthCallbackUrl}" +
+                             $"&scope={SheetsService.Scope.Spreadsheets}" +
+                             "&response_type=code" +
+                             "&access_type=offline" +
+                             "&prompt=consent" +
+                             $"&state=chatId={HARDCODED_CHAT_ID}";
+
+            string message = $"[Click here]({authUrl}) to authorize me";
+
+            await ClearKeyboard(message, ParseMode.Markdown);
         }
         
-        private void OnOpen()
+        private async Task OnOpen()
         {
-            _logger.Information("Spreadsheet url has been sent to user");
+            string spreadsheetUrl = await _spreadsheetIdStore.GetSpreadSheetUrlAsync(HARDCODED_CHAT_ID);
+            string message = $"[Click here]({spreadsheetUrl}) to open google spreadsheet";
+            await ClearKeyboard(message, ParseMode.Markdown);
         }
         
         #endregion
+        
+        private (string id, bool success) ExtractSpreadSheetId(string spreadSheetUrl)
+        {
+            string regex = "/spreadsheets/d/([a-zA-Z0-9-_]+)";
+            Match match = Regex.Match(spreadSheetUrl, regex, RegexOptions.Compiled);
+            if (match.Success)
+            {
+                return (match.Groups[1].Value, true);
+            }
+
+            return (spreadSheetUrl, false);
+        }
         
         private async Task SendKeyboard(params string[][] buttonRows)
         {
@@ -220,10 +257,10 @@ namespace SpreadsheetTextCapture.StateManagement
                                                                              "send /cancel to cancel current operation", replyMarkup: replyKeyboardMarkup);
         }
         
-        private async Task ClearKeyboard(string message)
+        private async Task ClearKeyboard(string message, ParseMode parseMode = ParseMode.Default)
         {
             ReplyKeyboardRemove clearKeyboard = new ReplyKeyboardRemove();
-            await _telegramBotClient.SendTextMessageAsync(HARDCODED_CHAT_ID, message, replyMarkup: clearKeyboard);
+            await _telegramBotClient.SendTextMessageAsync(HARDCODED_CHAT_ID, message, replyMarkup: clearKeyboard, parseMode: parseMode);
         }        
     }
 }

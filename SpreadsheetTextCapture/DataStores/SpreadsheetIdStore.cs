@@ -31,6 +31,18 @@ namespace SpreadsheetTextCapture.DataStores
 
             throw new SpreadSheetNotSetException(chatId);
         }
+        
+        public async Task<string> GetSpreadSheetUrlAsync(string chatId)
+        {
+            var query = _collection.Find(x => chatId.Equals(x.Id));
+            ChatSpreadsheetUrl chatSpreadsheetId = await query.FirstOrDefaultAsync();
+            if (chatSpreadsheetId != null)
+            {
+                return ConvertSpreadSheetIdToUrl(chatSpreadsheetId.SpreadsheetId);
+            }
+
+            throw new SpreadSheetNotSetException(chatId);
+        }
 
         public async Task SetSpreadSheetIdAsync(string chatId, string spreadsheetId)
         {
